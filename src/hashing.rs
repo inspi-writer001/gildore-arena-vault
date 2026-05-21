@@ -1,6 +1,3 @@
-use core::any::type_name;
-use quasar_lang::prelude::*;
-
 // costs Approx 140CUs
 // Direct syscall to Solana's native SHA256 implementation
 #[cfg(any(target_os = "solana", target_arch = "bpf"))]

@@ -19,6 +19,8 @@ use spl_token_interface::{
     ID as TOKEN_PROGRAM_ID,
 };
 
+// DISCLAIMER: this particular test was written by AI referencing from register_agent.rs
+
 const TEST_AGENT_NAME: &str = "alpha-bot";
 const DEPOSIT_AMOUNT: u64 = 100_000;
 const INITIAL_USER_BALANCE: u64 = 200_000;
@@ -112,7 +114,8 @@ pub fn process_deposit_for_agent_use(
             svm.get_account(&payer).expect("payer account"),
             svm.get_account(&user).expect("user account"),
             svm.get_account(&agent).expect("agent account"),
-            svm.get_account(&global_state).expect("global state account"),
+            svm.get_account(&global_state)
+                .expect("global state account"),
             Account {
                 address: user_state,
                 lamports: 0,
@@ -160,7 +163,10 @@ pub fn process_deposit_for_agent_use(
         ],
     );
 
-    print!("deposit_for_agent_use CUs: {:?} \n", result.compute_units_consumed);
+    print!(
+        "deposit_for_agent_use CUs: {:?} \n",
+        result.compute_units_consumed
+    );
     print!("deposit_for_agent_use logs: {:?} \n", result.logs);
     result.assert_success();
 
@@ -212,7 +218,9 @@ fn deposit_for_agent_use_test() {
     )
     .expect("error in deposit_for_agent_use");
 
-    let user_state_account = svm.get_account(&ctx.user_state).expect("user state should exist");
+    let user_state_account = svm
+        .get_account(&ctx.user_state)
+        .expect("user state should exist");
     assert_eq!(user_state_account.owner, crate::ID);
     assert_eq!(user_state_account.data[0], 1);
     assert_eq!(

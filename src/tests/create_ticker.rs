@@ -15,6 +15,8 @@ use spl_token_interface::{state::Mint, ID as TOKEN_PROGRAM_ID};
 const TEST_AGENT_NAME: &str = "alpha-bot";
 const APPROVED_SPEND: u64 = 50_000;
 
+// DISCLAIMER: this particular test was written by AI referencing from register_agent.rs
+
 fn process_register_ticker_for_me(
     svm: &mut quasar_svm::QuasarSvm,
     payer: solana_address::Address,
@@ -44,7 +46,8 @@ fn process_register_ticker_for_me(
                 .expect("user state account"),
             svm.get_account(&deposit_ctx.user_state_vault)
                 .expect("vault token account"),
-            svm.get_account(&deposit_ctx.ticker).expect("ticker account"),
+            svm.get_account(&deposit_ctx.ticker)
+                .expect("ticker account"),
             quasar_svm::token::create_keyed_mint_account_with_program(
                 &deposit_ctx.mint,
                 &Mint {
@@ -105,7 +108,9 @@ fn create_ticker_test() {
     process_register_ticker_for_me(&mut svm, payer, &deposit_ctx)
         .expect("error in register_ticker_for_me");
 
-    let ticker_account = svm.get_account(&deposit_ctx.ticker).expect("ticker should exist");
+    let ticker_account = svm
+        .get_account(&deposit_ctx.ticker)
+        .expect("ticker should exist");
     assert_eq!(ticker_account.owner, crate::ID);
     assert_eq!(ticker_account.data[0], 5);
     assert_eq!(
