@@ -34,6 +34,10 @@ zeropod = { version = "0.3.3", features = ["solana-program-error"] }
 quasar-svm = { version = "0.1" }
 solana-account = { version = "3.4.0" }
 solana-address = { version = "2.2.0", features = ["decode"] }
+solana-commitment-config = "3.1.1"
 solana-instruction = { version = "3.2.0", features = ["bincode"] }
+solana-keypair = "3.1.2"
 solana-pubkey = { version = "4.1.0" }
+solana-rpc-client = "3.1.14"
+solana-transaction = { version = "3.1.0", features = ["bincode"] }
 spl-token-interface = { version = "2.0.0" }

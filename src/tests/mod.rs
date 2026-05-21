@@ -14,6 +14,7 @@ use crate::{
 };
 
 mod initialize;
+mod initialize_devnet;
 mod register_agent;
 mod deposit_test;
 mod create_ticker;
