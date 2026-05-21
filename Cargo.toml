@@ -1,0 +1,39 @@
+[package]
+name = "gildore-vault"
+version = "0.1.0"
+edition = "2021"
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ['cfg(target_os, values("solana"))']
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+alloc = []
+client = []
+debug = []
+
+[dependencies]
+quasar-lang = { git = "https://github.com/blueshift-gg/quasar", branch = "master" }
+quasar-spl = { git = "https://github.com/blueshift-gg/quasar", branch = "master" }
+sha2 = "0.11.0"
+solana-address = { version = "2.2.0", features = ["curve25519"] }
+# quasar-lang = "0.0"
+# quasar-spl = "0.0"
+solana-instruction = { version = "3.2.0" }
+solana-program-error = "3.0.1"
+wincode = { version = "0.4.9", default-features = false, features = [
+    "derive",
+    "alloc",
+] }
+zeropod = { version = "0.3.3", features = ["solana-program-error"] }
+
+[dev-dependencies]
+quasar-svm = { version = "0.1" }
+solana-account = { version = "3.4.0" }
+solana-address = { version = "2.2.0", features = ["decode"] }
+solana-instruction = { version = "3.2.0", features = ["bincode"] }
+solana-pubkey = { version = "4.1.0" }
+spl-token-interface = { version = "2.0.0" }
