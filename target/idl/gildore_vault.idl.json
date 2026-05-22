@@ -1,0 +1,382 @@
+{
+  "address": "2um3F4vyQwcuhwrGdPHGMwwK5C4K5rFU84cxHPoYNMKg",
+  "metadata": {
+    "name": "gildore_vault",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "discriminator": [
+        0
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "globalStateAccount",
+          "writable": true
+        },
+        {
+          "name": "destinationTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "systemProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "InitializeArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "registerAgent",
+      "discriminator": [
+        1
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "agent",
+          "writable": true
+        },
+        {
+          "name": "globalStateAccount"
+        },
+        {
+          "name": "systemProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": {
+            "defined": "PodString"
+          }
+        }
+      ]
+    },
+    {
+      "name": "deleteAgent",
+      "discriminator": [
+        2
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "agent",
+          "writable": true
+        },
+        {
+          "name": "globalStateAccount"
+        },
+        {
+          "name": "systemProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": {
+            "defined": "PodString"
+          }
+        }
+      ]
+    },
+    {
+      "name": "depositForAgentUse",
+      "discriminator": [
+        3
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "agent",
+          "writable": true
+        },
+        {
+          "name": "globalStateAccount",
+          "writable": true
+        },
+        {
+          "name": "userState"
+        },
+        {
+          "name": "userStateVault"
+        },
+        {
+          "name": "ticker"
+        },
+        {
+          "name": "destinationFeeTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "registerTickerForMe",
+      "discriminator": [
+        4
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "agent",
+          "writable": true
+        },
+        {
+          "name": "userState"
+        },
+        {
+          "name": "userStateVault"
+        },
+        {
+          "name": "ticker"
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "tokenProgram"
+        },
+        {
+          "name": "systemProgram"
+        }
+      ],
+      "args": [
+        {
+          "name": "amountToSpend",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "UserState",
+      "discriminator": [
+        1
+      ]
+    },
+    {
+      "name": "GlobalState",
+      "discriminator": [
+        2
+      ]
+    },
+    {
+      "name": "AgentMarket",
+      "discriminator": [
+        3
+      ]
+    },
+    {
+      "name": "IAgent",
+      "discriminator": [
+        4
+      ]
+    },
+    {
+      "name": "Ticker",
+      "discriminator": [
+        5
+      ]
+    }
+  ],
+  "events": [],
+  "types": [
+    {
+      "name": "UserState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "userAddress",
+            "type": "publicKey"
+          },
+          {
+            "name": "agentId",
+            "type": "publicKey"
+          },
+          {
+            "name": "tickerId",
+            "type": "publicKey"
+          },
+          {
+            "name": "isInitialized",
+            "type": {
+              "defined": "PodBool"
+            }
+          },
+          {
+            "name": "modifiedTime",
+            "type": "u64"
+          },
+          {
+            "name": "createdTime",
+            "type": "u64"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "GlobalState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "feeDestination",
+            "type": "publicKey"
+          },
+          {
+            "name": "feeBps",
+            "type": "u16"
+          },
+          {
+            "name": "maxFee",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "admin",
+            "type": {
+              "vec": {
+                "items": "publicKey",
+                "maxLength": 4
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "AgentMarket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agentId",
+            "type": "publicKey"
+          },
+          {
+            "name": "tickerId",
+            "type": "publicKey"
+          },
+          {
+            "name": "isTrading",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "IAgent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "agentId",
+            "type": "publicKey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "seeds",
+            "type": {
+              "defined": "[u8]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ticker",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amountToSpend",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 0,
+      "name": "Unauthorized"
+    }
+  ]
+}

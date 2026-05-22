@@ -1,9 +1,7 @@
 import { Buffer } from "buffer";
-import { PublicKey, TransactionInstruction } from "@solana/web3.js";
-import { addCodecSizePrefix, fixCodecSize, getArrayCodec, getBooleanCodec, getBytesCodec, getStructCodec, getU16Codec, getU64Codec, getU8Codec, getUtf8Codec, transformCodec } from "@solana/codecs";
-
-type Address = PublicKey;
-const Address = PublicKey;
+import { PublicKey as Address, TransactionInstruction } from "@solana/web3.js";
+import { fixCodecSize, getArrayCodec, getBooleanCodec, getBytesCodec, getStructCodec, getU16Codec, getU32Codec, getU64Codec, getU8Codec, transformCodec } from "@solana/codecs";
+import type { Codec } from "@solana/codecs";
 
 function getPublicKeyCodec() {
   return transformCodec(
@@ -11,6 +9,12 @@ function getPublicKeyCodec() {
     (value: Address) => value.toBytes(),
     bytes => new Address(bytes),
   );
+}
+
+function getDynVecCodec<TFrom, TTo extends TFrom = TFrom>(
+  itemCodec: Codec<TFrom, TTo>,
+) {
+  return getArrayCodec(itemCodec, { size: getU32Codec() });
 }
 
 function matchDisc(data: Uint8Array, disc: Uint8Array): boolean {
@@ -63,17 +67,11 @@ export interface AgentMarket {
 export interface IAgent {
   agentId: Address;
   bump: number;
-  seeds: Uint8Array;
+  seeds: [u8];
 }
 
 export interface Ticker {
   amountToSpend: bigint;
-}
-
-export interface InitializeArgs {
-  feeBps: number;
-  maxFee: bigint;
-  admin: Array<Address>;
 }
 
 export interface InitializeInstructionArgs {
@@ -81,11 +79,11 @@ export interface InitializeInstructionArgs {
 }
 
 export interface RegisterAgentInstructionArgs {
-  name: string;
+  name: PodString;
 }
 
 export interface DeleteAgentInstructionArgs {
-  name: string;
+  name: PodString;
 }
 
 export interface DepositForAgentUseInstructionArgs {
@@ -98,6 +96,7 @@ export interface RegisterTickerForMeInstructionArgs {
 
 export interface InitializeInstructionInput {
   payer: Address;
+  globalStateAccount: Address;
   destinationTokenAccount: Address;
   systemProgram: Address;
   args: InitializeArgs;
@@ -106,21 +105,27 @@ export interface InitializeInstructionInput {
 export interface RegisterAgentInstructionInput {
   admin: Address;
   agent: Address;
+  globalStateAccount: Address;
   systemProgram: Address;
-  name: string;
+  name: PodString;
 }
 
 export interface DeleteAgentInstructionInput {
   admin: Address;
   agent: Address;
+  globalStateAccount: Address;
   systemProgram: Address;
-  name: string;
+  name: PodString;
 }
 
 export interface DepositForAgentUseInstructionInput {
   payer: Address;
   user: Address;
+  agent: Address;
+  globalStateAccount: Address;
+  userState: Address;
   userStateVault: Address;
+  ticker: Address;
   destinationFeeTokenAccount: Address;
   userTokenAccount: Address;
   mint: Address;
@@ -132,7 +137,10 @@ export interface DepositForAgentUseInstructionInput {
 export interface RegisterTickerForMeInstructionInput {
   payer: Address;
   user: Address;
+  agent: Address;
+  userState: Address;
   userStateVault: Address;
+  ticker: Address;
   mint: Address;
   tokenProgram: Address;
   systemProgram: Address;
@@ -151,37 +159,13 @@ export const UserStateCodec = getStructCodec([
   ["bump", getU8Codec()],
 ]);
 
-export const GlobalStateCodec = {
-  encode(value: GlobalState): Uint8Array {
-    const fixedCodec = getStructCodec([
-      ["feeDestination", getPublicKeyCodec()],
-      ["feeBps", getU16Codec()],
-      ["maxFee", getU64Codec()],
-      ["bump", getU8Codec()],
-    ]);
-    const fixedBytes = fixedCodec.encode({ feeDestination: value.feeDestination, feeBps: value.feeBps, maxFee: value.maxFee, bump: value.bump });
-    const adminPrefix = getU16Codec().encode(value.admin.length);
-    const adminBytes = getArrayCodec(getPublicKeyCodec(), { size: value.admin.length }).encode(value.admin);
-    return Buffer.from([...fixedBytes, ...adminPrefix, ...adminBytes]);
-  },
-  decode(data: Uint8Array): GlobalState {
-    let offset = 0;
-    const fixedCodec = getStructCodec([
-      ["feeDestination", getPublicKeyCodec()],
-      ["feeBps", getU16Codec()],
-      ["maxFee", getU64Codec()],
-      ["bump", getU8Codec()],
-    ]);
-    const fixedResult = fixedCodec.decode(data.slice(offset));
-    offset += fixedCodec.fixedSize ?? fixedCodec.encode(fixedResult).length;
-    const adminLen = getU16Codec().decode(data.slice(offset));
-    offset += 2;
-    const adminCodec = getArrayCodec(getPublicKeyCodec(), { size: Number(adminLen) });
-    const admin = adminCodec.decode(data.slice(offset));
-    offset += adminCodec.encode(admin).length;
-    return { feeDestination: fixedResult.feeDestination, feeBps: fixedResult.feeBps, maxFee: fixedResult.maxFee, bump: fixedResult.bump, admin };
-  },
-};
+export const GlobalStateCodec = getStructCodec([
+  ["feeDestination", getPublicKeyCodec()],
+  ["feeBps", getU16Codec()],
+  ["maxFee", getU64Codec()],
+  ["bump", getU8Codec()],
+  ["admin", getDynVecCodec(getPublicKeyCodec())],
+]);
 
 export const AgentMarketCodec = getStructCodec([
   ["agentId", getPublicKeyCodec()],
@@ -193,59 +177,28 @@ export const AgentMarketCodec = getStructCodec([
 export const IAgentCodec = getStructCodec([
   ["agentId", getPublicKeyCodec()],
   ["bump", getU8Codec()],
-  ["seeds", fixCodecSize(getBytesCodec(), 37)],
+  ["seeds", [u8]Codec],
 ]);
 
 export const TickerCodec = getStructCodec([
   ["amountToSpend", getU64Codec()],
 ]);
 
-export const InitializeArgsCodec = {
-  encode(value: InitializeArgs): Uint8Array {
-    const fixedCodec = getStructCodec([
-      ["feeBps", getU16Codec()],
-      ["maxFee", getU64Codec()],
-    ]);
-    const fixedBytes = fixedCodec.encode({ feeBps: value.feeBps, maxFee: value.maxFee });
-    const adminPrefix = getU16Codec().encode(value.admin.length);
-    const adminBytes = getArrayCodec(getPublicKeyCodec(), { size: value.admin.length }).encode(value.admin);
-    return Buffer.from([...fixedBytes, ...adminPrefix, ...adminBytes]);
-  },
-  decode(data: Uint8Array): InitializeArgs {
-    let offset = 0;
-    const fixedCodec = getStructCodec([
-      ["feeBps", getU16Codec()],
-      ["maxFee", getU64Codec()],
-    ]);
-    const fixedResult = fixedCodec.decode(data.slice(offset));
-    offset += fixedCodec.fixedSize ?? fixedCodec.encode(fixedResult).length;
-    const adminLen = getU16Codec().decode(data.slice(offset));
-    offset += 2;
-    const adminCodec = getArrayCodec(getPublicKeyCodec(), { size: Number(adminLen) });
-    const admin = adminCodec.decode(data.slice(offset));
-    offset += adminCodec.encode(admin).length;
-    return { feeBps: fixedResult.feeBps, maxFee: fixedResult.maxFee, admin };
-  },
-};
-
 /* Enums */
-export const ProgramInstruction = {
-  Initialize: "Initialize",
-  RegisterAgent: "RegisterAgent",
-  DeleteAgent: "DeleteAgent",
-  DepositForAgentUse: "DepositForAgentUse",
-  RegisterTickerForMe: "RegisterTickerForMe",
-} as const;
-
-export type ProgramInstruction =
-  (typeof ProgramInstruction)[keyof typeof ProgramInstruction];
+export enum ProgramInstruction {
+  Initialize = "Initialize",
+  RegisterAgent = "RegisterAgent",
+  DeleteAgent = "DeleteAgent",
+  DepositForAgentUse = "DepositForAgentUse",
+  RegisterTickerForMe = "RegisterTickerForMe",
+}
 
 export type DecodedInstruction =
-  | { type: typeof ProgramInstruction.Initialize; args: InitializeInstructionArgs }
-  | { type: typeof ProgramInstruction.RegisterAgent; args: RegisterAgentInstructionArgs }
-  | { type: typeof ProgramInstruction.DeleteAgent; args: DeleteAgentInstructionArgs }
-  | { type: typeof ProgramInstruction.DepositForAgentUse; args: DepositForAgentUseInstructionArgs }
-  | { type: typeof ProgramInstruction.RegisterTickerForMe; args: RegisterTickerForMeInstructionArgs };
+  | { type: ProgramInstruction.Initialize; args: InitializeInstructionArgs }
+  | { type: ProgramInstruction.RegisterAgent; args: RegisterAgentInstructionArgs }
+  | { type: ProgramInstruction.DeleteAgent; args: DeleteAgentInstructionArgs }
+  | { type: ProgramInstruction.DepositForAgentUse; args: DepositForAgentUseInstructionArgs }
+  | { type: ProgramInstruction.RegisterTickerForMe; args: RegisterTickerForMeInstructionArgs };
 
 /* Client */
 export class GildoreVaultClient {
@@ -284,20 +237,16 @@ export class GildoreVaultClient {
       return { type: ProgramInstruction.Initialize, args: argsCodec.decode(data.slice(INITIALIZE_INSTRUCTION_DISCRIMINATOR.length)) };
     }
     if (matchDisc(data, REGISTER_AGENT_INSTRUCTION_DISCRIMINATOR)) {
-      let offset = REGISTER_AGENT_INSTRUCTION_DISCRIMINATOR.length;
-      const nameLen = getU8Codec().decode(data.slice(offset));
-      offset += 1;
-      const name = new TextDecoder().decode(data.slice(offset, offset + Number(nameLen)));
-      offset += Number(nameLen);
-      return { type: ProgramInstruction.RegisterAgent, args: { name } };
+      const argsCodec = getStructCodec([
+        ["name", PodStringCodec],
+      ]);
+      return { type: ProgramInstruction.RegisterAgent, args: argsCodec.decode(data.slice(REGISTER_AGENT_INSTRUCTION_DISCRIMINATOR.length)) };
     }
     if (matchDisc(data, DELETE_AGENT_INSTRUCTION_DISCRIMINATOR)) {
-      let offset = DELETE_AGENT_INSTRUCTION_DISCRIMINATOR.length;
-      const nameLen = getU8Codec().decode(data.slice(offset));
-      offset += 1;
-      const name = new TextDecoder().decode(data.slice(offset, offset + Number(nameLen)));
-      offset += Number(nameLen);
-      return { type: ProgramInstruction.DeleteAgent, args: { name } };
+      const argsCodec = getStructCodec([
+        ["name", PodStringCodec],
+      ]);
+      return { type: ProgramInstruction.DeleteAgent, args: argsCodec.decode(data.slice(DELETE_AGENT_INSTRUCTION_DISCRIMINATOR.length)) };
     }
     if (matchDisc(data, DEPOSIT_FOR_AGENT_USE_INSTRUCTION_DISCRIMINATOR)) {
       const argsCodec = getStructCodec([
@@ -315,8 +264,6 @@ export class GildoreVaultClient {
   }
 
   createInitializeInstruction(input: InitializeInstructionInput): TransactionInstruction {
-    const accountsMap: Record<string, Address> = {};
-    accountsMap["globalStateAccount"] = findGlobalStateAccountAddress();
     const argsCodec = getStructCodec([
       ["args", InitializeArgsCodec],
     ]);
@@ -325,7 +272,7 @@ export class GildoreVaultClient {
       programId: GildoreVaultClient.programId,
       keys: [
         { pubkey: input.payer, isSigner: true, isWritable: true },
-        { pubkey: accountsMap["globalStateAccount"], isSigner: false, isWritable: true },
+        { pubkey: input.globalStateAccount, isSigner: false, isWritable: true },
         { pubkey: input.destinationTokenAccount, isSigner: false, isWritable: true },
         { pubkey: input.systemProgram, isSigner: false, isWritable: false },
       ],
@@ -334,19 +281,16 @@ export class GildoreVaultClient {
   }
 
   createRegisterAgentInstruction(input: RegisterAgentInstructionInput): TransactionInstruction {
-    const accountsMap: Record<string, Address> = {};
-    accountsMap["globalStateAccount"] = findGlobalStateAccountAddress();
-    const disc = new Uint8Array([1]);
-    const fixedBytes = new Uint8Array(0);
-    const nameBytes = new TextEncoder().encode(input.name);
-    const namePrefix = getU8Codec().encode(nameBytes.length);
-    const data = Buffer.from([...disc, ...fixedBytes, ...namePrefix, ...nameBytes]);
+    const argsCodec = getStructCodec([
+      ["name", PodStringCodec],
+    ]);
+    const data = Buffer.from([1, ...argsCodec.encode({ name: input.name })]);
     return new TransactionInstruction({
       programId: GildoreVaultClient.programId,
       keys: [
         { pubkey: input.admin, isSigner: true, isWritable: true },
         { pubkey: input.agent, isSigner: false, isWritable: true },
-        { pubkey: accountsMap["globalStateAccount"], isSigner: false, isWritable: false },
+        { pubkey: input.globalStateAccount, isSigner: false, isWritable: false },
         { pubkey: input.systemProgram, isSigner: false, isWritable: false },
       ],
       data,
@@ -354,19 +298,16 @@ export class GildoreVaultClient {
   }
 
   createDeleteAgentInstruction(input: DeleteAgentInstructionInput): TransactionInstruction {
-    const accountsMap: Record<string, Address> = {};
-    accountsMap["globalStateAccount"] = findGlobalStateAccountAddress();
-    const disc = new Uint8Array([2]);
-    const fixedBytes = new Uint8Array(0);
-    const nameBytes = new TextEncoder().encode(input.name);
-    const namePrefix = getU8Codec().encode(nameBytes.length);
-    const data = Buffer.from([...disc, ...fixedBytes, ...namePrefix, ...nameBytes]);
+    const argsCodec = getStructCodec([
+      ["name", PodStringCodec],
+    ]);
+    const data = Buffer.from([2, ...argsCodec.encode({ name: input.name })]);
     return new TransactionInstruction({
       programId: GildoreVaultClient.programId,
       keys: [
         { pubkey: input.admin, isSigner: true, isWritable: true },
         { pubkey: input.agent, isSigner: false, isWritable: true },
-        { pubkey: accountsMap["globalStateAccount"], isSigner: false, isWritable: false },
+        { pubkey: input.globalStateAccount, isSigner: false, isWritable: false },
         { pubkey: input.systemProgram, isSigner: false, isWritable: false },
       ],
       data,
@@ -374,11 +315,6 @@ export class GildoreVaultClient {
   }
 
   createDepositForAgentUseInstruction(input: DepositForAgentUseInstructionInput): TransactionInstruction {
-    const accountsMap: Record<string, Address> = {};
-    accountsMap["agent"] = findAgentAddress();
-    accountsMap["globalStateAccount"] = findGlobalStateAccountAddress();
-    accountsMap["userState"] = findUserStateAddress();
-    accountsMap["ticker"] = findTickerAddress();
     const argsCodec = getStructCodec([
       ["amount", getU64Codec()],
     ]);
@@ -388,11 +324,11 @@ export class GildoreVaultClient {
       keys: [
         { pubkey: input.payer, isSigner: true, isWritable: true },
         { pubkey: input.user, isSigner: true, isWritable: true },
-        { pubkey: accountsMap["agent"], isSigner: false, isWritable: true },
-        { pubkey: accountsMap["globalStateAccount"], isSigner: false, isWritable: true },
-        { pubkey: accountsMap["userState"], isSigner: false, isWritable: false },
+        { pubkey: input.agent, isSigner: false, isWritable: true },
+        { pubkey: input.globalStateAccount, isSigner: false, isWritable: true },
+        { pubkey: input.userState, isSigner: false, isWritable: false },
         { pubkey: input.userStateVault, isSigner: false, isWritable: false },
-        { pubkey: accountsMap["ticker"], isSigner: false, isWritable: false },
+        { pubkey: input.ticker, isSigner: false, isWritable: false },
         { pubkey: input.destinationFeeTokenAccount, isSigner: false, isWritable: true },
         { pubkey: input.userTokenAccount, isSigner: false, isWritable: true },
         { pubkey: input.mint, isSigner: false, isWritable: false },
@@ -404,10 +340,6 @@ export class GildoreVaultClient {
   }
 
   createRegisterTickerForMeInstruction(input: RegisterTickerForMeInstructionInput): TransactionInstruction {
-    const accountsMap: Record<string, Address> = {};
-    accountsMap["agent"] = findAgentAddress();
-    accountsMap["userState"] = findUserStateAddress();
-    accountsMap["ticker"] = findTickerAddress();
     const argsCodec = getStructCodec([
       ["amountToSpend", getU64Codec()],
     ]);
@@ -417,10 +349,10 @@ export class GildoreVaultClient {
       keys: [
         { pubkey: input.payer, isSigner: true, isWritable: true },
         { pubkey: input.user, isSigner: true, isWritable: true },
-        { pubkey: accountsMap["agent"], isSigner: false, isWritable: true },
-        { pubkey: accountsMap["userState"], isSigner: false, isWritable: false },
+        { pubkey: input.agent, isSigner: false, isWritable: true },
+        { pubkey: input.userState, isSigner: false, isWritable: false },
         { pubkey: input.userStateVault, isSigner: false, isWritable: false },
-        { pubkey: accountsMap["ticker"], isSigner: false, isWritable: false },
+        { pubkey: input.ticker, isSigner: false, isWritable: false },
         { pubkey: input.mint, isSigner: false, isWritable: false },
         { pubkey: input.tokenProgram, isSigner: false, isWritable: false },
         { pubkey: input.systemProgram, isSigner: false, isWritable: false },
@@ -428,43 +360,6 @@ export class GildoreVaultClient {
       data,
     });
   }
-}
-
-/* PDA Helpers */
-export function findGlobalStateAccountAddress(): Address {
-  return Address.findProgramAddressSync(
-    [
-        new Uint8Array([103, 108, 111, 98, 97, 108, 95, 115, 116, 97, 116, 101]),
-    ],
-    GildoreVaultClient.programId,
-  )[0];
-}
-
-export function findAgentAddress(): Address {
-  return Address.findProgramAddressSync(
-    [
-        new Uint8Array([97, 103, 101, 110, 116]),
-    ],
-    GildoreVaultClient.programId,
-  )[0];
-}
-
-export function findUserStateAddress(): Address {
-  return Address.findProgramAddressSync(
-    [
-        new Uint8Array([117, 115, 101, 114, 95, 115, 116, 97, 116, 101]),
-    ],
-    GildoreVaultClient.programId,
-  )[0];
-}
-
-export function findTickerAddress(): Address {
-  return Address.findProgramAddressSync(
-    [
-        new Uint8Array([116, 105, 99, 107, 101, 114]),
-    ],
-    GildoreVaultClient.programId,
-  )[0];
 }
 
 /* Errors */

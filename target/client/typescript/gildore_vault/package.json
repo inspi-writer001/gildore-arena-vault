@@ -9,6 +9,6 @@
   "dependencies": {
     "@solana/codecs": "^6.2.0",
     "@solana/kit": "^6.0.0",
-    "@solana/web3.js": "git+https://github.com/blueshift-gg/web3.js.git#v2"
+    "@solana/web3.js": "github:blueshift-gg/web3.js#v2"
   }
 }
