@@ -16,7 +16,7 @@ impl From<InitializeInstruction> for Instruction {
     fn from(ix: InitializeInstruction) -> Instruction {
         let accounts = vec![
             AccountMeta::new(ix.payer, true),
-            AccountMeta::new(ix.global_state_account, false),
+            AccountMeta::new_readonly(ix.global_state_account, false),
             AccountMeta::new(ix.destination_token_account, false),
             AccountMeta::new_readonly(ix.system_program, false),
         ];
@@ -61,7 +61,7 @@ pub struct DeleteAgentInstruction {
     pub agent: Address,
     pub global_state_account: Address,
     pub system_program: Address,
-    pub name: PodString,
+    pub id: Address,
 }
 
 impl From<DeleteAgentInstruction> for Instruction {
@@ -73,7 +73,7 @@ impl From<DeleteAgentInstruction> for Instruction {
             AccountMeta::new_readonly(ix.system_program, false),
         ];
         let mut data = vec![2];
-        data.extend_from_slice(&ix.name.to_le_bytes());
+        data.extend_from_slice(ix.id.as_ref());
         Instruction {
             program_id: ID,
             accounts,

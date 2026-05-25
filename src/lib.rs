@@ -25,8 +25,8 @@ mod gildore_vault {
     }
 
     #[instruction(discriminator = 2)]
-    pub fn delete_agent(ctx: Ctx<Agent>, name: PodString<20>) -> Result<(), ProgramError> {
-        ctx.accounts.register_agent(name)
+    pub fn delete_agent(ctx: Ctx<Agent>, id: Address) -> Result<(), ProgramError> {
+        ctx.accounts.delete_agent(id)
     }
 
     #[instruction(discriminator = 3)]

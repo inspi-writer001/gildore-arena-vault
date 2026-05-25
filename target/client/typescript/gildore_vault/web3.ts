@@ -83,7 +83,7 @@ export interface RegisterAgentInstructionArgs {
 }
 
 export interface DeleteAgentInstructionArgs {
-  name: PodString;
+  id: Address;
 }
 
 export interface DepositForAgentUseInstructionArgs {
@@ -115,7 +115,7 @@ export interface DeleteAgentInstructionInput {
   agent: Address;
   globalStateAccount: Address;
   systemProgram: Address;
-  name: PodString;
+  id: Address;
 }
 
 export interface DepositForAgentUseInstructionInput {
@@ -244,7 +244,7 @@ export class GildoreVaultClient {
     }
     if (matchDisc(data, DELETE_AGENT_INSTRUCTION_DISCRIMINATOR)) {
       const argsCodec = getStructCodec([
-        ["name", PodStringCodec],
+        ["id", getPublicKeyCodec()],
       ]);
       return { type: ProgramInstruction.DeleteAgent, args: argsCodec.decode(data.slice(DELETE_AGENT_INSTRUCTION_DISCRIMINATOR.length)) };
     }
@@ -272,7 +272,7 @@ export class GildoreVaultClient {
       programId: GildoreVaultClient.programId,
       keys: [
         { pubkey: input.payer, isSigner: true, isWritable: true },
-        { pubkey: input.globalStateAccount, isSigner: false, isWritable: true },
+        { pubkey: input.globalStateAccount, isSigner: false, isWritable: false },
         { pubkey: input.destinationTokenAccount, isSigner: false, isWritable: true },
         { pubkey: input.systemProgram, isSigner: false, isWritable: false },
       ],
@@ -299,9 +299,9 @@ export class GildoreVaultClient {
 
   createDeleteAgentInstruction(input: DeleteAgentInstructionInput): TransactionInstruction {
     const argsCodec = getStructCodec([
-      ["name", PodStringCodec],
+      ["id", getPublicKeyCodec()],
     ]);
-    const data = Buffer.from([2, ...argsCodec.encode({ name: input.name })]);
+    const data = Buffer.from([2, ...argsCodec.encode({ id: input.id })]);
     return new TransactionInstruction({
       programId: GildoreVaultClient.programId,
       keys: [

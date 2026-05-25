@@ -22,10 +22,15 @@ pub struct ATicker {
     )]
     pub user_state: Account<UserState>,
 
+    // #[account(
+    //     token(
+    //         mint = mint, authority = user_state, token_program = token_program
+    //     )
+    // )]
+    // pub user_state_vault: InterfaceAccount<Token>,
     #[account(
-        token(
-            mint = mint, authority = user_state, token_program = token_program
-        )
+       constraints(&user_state_vault.mint == mint.address()),
+       constraints(&user_state_vault.owner == user_state.address())
     )]
     pub user_state_vault: InterfaceAccount<Token>,
 

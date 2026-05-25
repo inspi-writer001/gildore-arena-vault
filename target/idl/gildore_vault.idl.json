@@ -18,8 +18,7 @@
           "signer": true
         },
         {
-          "name": "globalStateAccount",
-          "writable": true
+          "name": "globalStateAccount"
         },
         {
           "name": "destinationTokenAccount",
@@ -93,10 +92,8 @@
       ],
       "args": [
         {
-          "name": "name",
-          "type": {
-            "defined": "PodString"
-          }
+          "name": "id",
+          "type": "publicKey"
         }
       ]
     },

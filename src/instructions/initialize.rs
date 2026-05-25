@@ -8,7 +8,7 @@ pub struct Initialize {
     pub payer: Signer,
 
     #[account(
-        init,
+        init(idempotent),
        address = GlobalState::seeds(),
     )]
     pub global_state_account: Account<GlobalState>,
