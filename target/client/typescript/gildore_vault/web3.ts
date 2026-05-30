@@ -72,6 +72,7 @@ export interface IAgent {
 
 export interface Ticker {
   amountToSpend: bigint;
+  isLockedInPosition: PodBool;
 }
 
 export interface InitializeInstructionArgs {
@@ -182,6 +183,7 @@ export const IAgentCodec = getStructCodec([
 
 export const TickerCodec = getStructCodec([
   ["amountToSpend", getU64Codec()],
+  ["isLockedInPosition", PodBoolCodec],
 ]);
 
 /* Enums */

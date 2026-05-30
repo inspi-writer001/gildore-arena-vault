@@ -365,6 +365,12 @@
           {
             "name": "amountToSpend",
             "type": "u64"
+          },
+          {
+            "name": "isLockedInPosition",
+            "type": {
+              "defined": "PodBool"
+            }
           }
         ]
       }

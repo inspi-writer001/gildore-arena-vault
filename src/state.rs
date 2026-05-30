@@ -49,4 +49,5 @@ pub struct IAgent {
 #[seeds(b"ticker", agent_id: Address, user: Address)]
 pub struct Ticker {
     pub amount_to_spend: u64,
+    pub is_locked_in_position: PodBool,
 }

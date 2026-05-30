@@ -57,6 +57,7 @@ impl ATicker {
         } // we will relax this check to only when there's a balance because we need this to be called before deposit where the user_state_vault will be created
 
         self.ticker.amount_to_spend = amount_to_spend.into();
+        self.ticker.is_locked_in_position = false.into();
         Ok(())
     }
 }
