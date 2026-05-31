@@ -11,7 +11,7 @@ const MINIMUM_SPENDABLE: u64 = 15;
 // #[instruction(user: Address)]
 pub struct ConsumeTickerForUser {
     #[account(mut)]
-    pub admin: Signer,
+    pub broadcaster: Signer,
 
     #[account()]
     pub user: SystemAccount,
@@ -59,8 +59,6 @@ pub struct ConsumeTickerForUser {
 }
 
 impl ConsumeTickerForUser {
-    // assert - ticker is spendable
-
     pub fn consume_ticker_for_user(&mut self) -> Result<(), ProgramError> {
         let mut spendable_amount = self.ticker.amount_to_spend();
         let normal_minimum_spendable = MINIMUM_SPENDABLE * 10u64.pow(self.mint.decimals() as u32);
