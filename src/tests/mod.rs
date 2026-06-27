@@ -19,6 +19,8 @@ mod register_agent;
 mod register_agent_devnet;
 mod deposit_test;
 mod create_ticker;
+mod consume_ticker_test;
+mod update_ticker_test;
 
 pub struct ReusableState {
     pub global_state: Address,

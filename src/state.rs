@@ -8,12 +8,12 @@ pub const DEPLOYER_ADDRESS: Address =
 #[seeds(b"user_state", user: Address,token_mint: Address, agent_id: Address)]
 pub struct UserState {
     pub user_address: Address,
-    pub agent_id: Address, // if agent is locked in, no withdrawals from vault
+    pub agent_id: Address, // if agent is locked in, no withdrawals from vault -- actually no, anyone can decide to opt out mid-trade
     pub ticker_id: Address,
     pub is_initialized: PodBool,
     pub modified_time: u64,
     pub created_time: u64,
-    pub amount: u64,
+    pub net_deposited_amount: u64,
     pub bump: u8,
 }
 
@@ -49,5 +49,5 @@ pub struct IAgent {
 #[seeds(b"ticker", agent_id: Address, user: Address)]
 pub struct Ticker {
     pub amount_to_spend: u64,
-    pub is_locked_in_position: PodBool,
+    pub is_in_position: PodBool,
 }

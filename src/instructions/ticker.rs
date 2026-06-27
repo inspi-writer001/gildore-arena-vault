@@ -1,7 +1,7 @@
 use quasar_lang::prelude::*;
 use quasar_spl::prelude::*;
 
-use crate::state::{GlobalState, IAgent, Ticker, UserState};
+use crate::state::{IAgent, Ticker, UserState};
 
 #[derive(Accounts)]
 pub struct ATicker {
@@ -22,18 +22,6 @@ pub struct ATicker {
     )]
     pub user_state: Account<UserState>,
 
-    // #[account(
-    //     token(
-    //         mint = mint, authority = user_state, token_program = token_program
-    //     )
-    // )]
-    // pub user_state_vault: InterfaceAccount<Token>,
-    #[account(
-       constraints(&user_state_vault.mint == mint.address()),
-       constraints(&user_state_vault.owner == user_state.address())
-    )]
-    pub user_state_vault: InterfaceAccount<Token>,
-
     #[account(
         init(idempotent),
         payer = payer,
@@ -42,22 +30,11 @@ pub struct ATicker {
     pub ticker: Account<Ticker>,
 
     pub mint: InterfaceAccount<Mint>,
-
-    pub token_program: Interface<TokenInterface>,
-    pub system_program: Program<SystemProgram>,
 }
 
 impl ATicker {
     pub fn register_ticker_for_me(&mut self, amount_to_spend: u64) -> Result<(), ProgramError> {
-        if self.user_state_vault.amount() > 0 {
-            assert!(
-                amount_to_spend <= self.user_state_vault.amount(),
-                "cannot approve more than balance"
-            );
-        } // we will relax this check to only when there's a balance because we need this to be called before deposit where the user_state_vault will be created
-
         self.ticker.amount_to_spend = amount_to_spend.into();
-        self.ticker.is_locked_in_position = false.into();
         Ok(())
     }
 }

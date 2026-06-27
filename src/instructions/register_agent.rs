@@ -186,6 +186,14 @@ impl Agent {
 
         // assert account is valid
         {
+            let (expected_agent_address, _) =
+                Address::derive_program_address(&[b"agent", id.as_ref()], &crate::ID)
+                    .ok_or(ProgramError::InvalidSeeds)?;
+
+            if expected_agent_address != *self.agent.address() {
+                return Err(ProgramError::InvalidSeeds);
+            }
+
             let agent_struct = unsafe { IAgent::from_view_unchecked(self.agent.to_account_view()) };
 
             assert!(agent_struct.agent_id == id, "failed account comparison");

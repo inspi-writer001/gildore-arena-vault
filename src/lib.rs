@@ -44,6 +44,24 @@ mod gildore_vault {
     ) -> Result<(), ProgramError> {
         ctx.accounts.register_ticker_for_me(amount_to_spend)
     }
+
+    #[instruction(discriminator = 5)]
+    pub fn consume_ticker(ctx: Ctx<ConsumeTickerForUser>) -> Result<(), ProgramError> {
+        ctx.accounts.consume_ticker_for_user()
+    }
+
+    #[instruction(discriminator = 6)]
+    pub fn user_withdrawal(
+        ctx: Ctx<UserWithdrawFromParticularAgentVault>,
+        amount: u64,
+    ) -> Result<(), ProgramError> {
+        ctx.accounts.withdraw(amount)
+    }
+
+    #[instruction(discriminator = 7)]
+    pub fn update_ticker_close_trade(ctx: Ctx<CloseTrade>) -> Result<(), ProgramError> {
+        ctx.accounts.update_ticker_close_trade()
+    }
 }
 
 #[cfg(test)]

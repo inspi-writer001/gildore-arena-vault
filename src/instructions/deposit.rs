@@ -117,7 +117,7 @@ impl UserDepositForAgentUse {
         if self.user_state.is_initialized == false {
             self.user_state.set_inner(UserStateInner {
                 agent_id: self.agent.agent_id,
-                amount: amount_to_user_vault,
+                net_deposited_amount: amount_to_user_vault,
                 is_initialized: true.into(),
                 bump: bumps.user_state,
                 created_time: current_time,
@@ -126,14 +126,14 @@ impl UserDepositForAgentUse {
                 ticker_id: *self.ticker.address(),
             })
         } else {
-            let previous_amount = self.user_state.amount();
+            let previous_amount = self.user_state.net_deposited_amount();
 
             let new_amount = previous_amount.saturating_add(amount_to_user_vault);
 
             let current_time = i64::from(Clock::get()?.unix_timestamp) as u64;
 
             self.user_state.modified_time = current_time.into();
-            self.user_state.amount = new_amount.into();
+            self.user_state.net_deposited_amount = new_amount.into();
         }
         Ok(())
     }

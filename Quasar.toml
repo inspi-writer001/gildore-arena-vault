@@ -6,7 +6,7 @@ type = "solana"
 
 [testing]
 language = ["typescript", "rust"]
-framework = "quasarsvm-kit"
+framework = "quasarsvm-rust"
 
 [testing.rust]
 framework = "quasar-svm"

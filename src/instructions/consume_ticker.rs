@@ -13,6 +13,9 @@ pub struct ConsumeTickerForUser {
     #[account(mut)]
     pub broadcaster: Signer,
 
+    #[account(mut)]
+    pub admin: Signer,
+
     #[account()]
     pub user: SystemAccount,
 
@@ -60,6 +63,15 @@ pub struct ConsumeTickerForUser {
 
 impl ConsumeTickerForUser {
     pub fn consume_ticker_for_user(&mut self) -> Result<(), ProgramError> {
+        if !self
+            .global_state_account
+            .admin()
+            .iter()
+            .any(|a| a.eq(self.admin.address()))
+        {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
         let mut spendable_amount = self.ticker.amount_to_spend();
         let normal_minimum_spendable = MINIMUM_SPENDABLE * 10u64.pow(self.mint.decimals() as u32);
         let normal_hard_cap_spendable = HARD_CAP_SPENDABLE * 10u64.pow(self.mint.decimals() as u32);
@@ -77,13 +89,29 @@ impl ConsumeTickerForUser {
             }
         }
 
-        let bump = self.user_state.bump.to_le_bytes();
+        let (expected_user_state, bump) = Address::derive_program_address(
+            &[
+                b"user_state",
+                self.user.address().as_ref(),
+                self.mint.address().as_ref(),
+                self.agent.address().as_ref(),
+            ],
+            &crate::ID,
+        )
+        .ok_or(ProgramError::InvalidSeeds)?;
+
+        if expected_user_state != *self.user_state.address() {
+            return Err(ProgramError::InvalidSeeds);
+        }
+
+        let bump = [bump];
 
         let signer_seeds = [
+            Seed::from(b"user_state" as &[u8]),
             Seed::from(self.user.address().as_ref()),
             Seed::from(self.mint.address().as_ref()),
             Seed::from(self.agent.address().as_ref()),
-            Seed::from(&bump),
+            Seed::from(bump.as_ref()),
         ];
 
         self.token_program
@@ -96,6 +124,36 @@ impl ConsumeTickerForUser {
                 self.mint.decimals(),
             )
             .invoke_signed(&signer_seeds)?;
+
+        self.ticker.is_in_position = true.into();
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+pub struct CloseTrade {
+    #[account(mut)]
+    pub broadcaster: Signer,
+
+    #[account()]
+    pub user: SystemAccount,
+
+    #[account(
+        mut,
+        address= IAgent::seeds(agent.agent_id())
+    )]
+    pub agent: Account<IAgent>,
+
+    #[account(
+        mut,
+        address = Ticker::seeds(agent.agent_id(), user.address())
+    )]
+    pub ticker: Account<Ticker>,
+}
+
+impl CloseTrade {
+    pub fn update_ticker_close_trade(&mut self) -> Result<(), ProgramError> {
+        self.ticker.is_in_position = false.into();
         Ok(())
     }
 }

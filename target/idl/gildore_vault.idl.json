@@ -179,10 +179,61 @@
           "name": "userState"
         },
         {
-          "name": "userStateVault"
+          "name": "ticker"
         },
         {
-          "name": "ticker"
+          "name": "mint"
+        }
+      ],
+      "args": [
+        {
+          "name": "amountToSpend",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "consumeTicker",
+      "discriminator": [
+        5
+      ],
+      "accounts": [
+        {
+          "name": "broadcaster",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user"
+        },
+        {
+          "name": "agent",
+          "writable": true
+        },
+        {
+          "name": "globalStateAccount",
+          "writable": true
+        },
+        {
+          "name": "userState",
+          "writable": true
+        },
+        {
+          "name": "userStateVault",
+          "writable": true
+        },
+        {
+          "name": "destination",
+          "writable": true
+        },
+        {
+          "name": "ticker",
+          "writable": true
         },
         {
           "name": "mint"
@@ -194,12 +245,75 @@
           "name": "systemProgram"
         }
       ],
+      "args": []
+    },
+    {
+      "name": "userWithdrawal",
+      "discriminator": [
+        6
+      ],
+      "accounts": [
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "agent"
+        },
+        {
+          "name": "userState",
+          "writable": true
+        },
+        {
+          "name": "userStateVault"
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "globalStateAccount",
+          "writable": true
+        },
+        {
+          "name": "userTokenAccount",
+          "writable": true
+        },
+        {
+          "name": "tokenProgram"
+        }
+      ],
       "args": [
         {
-          "name": "amountToSpend",
+          "name": "amount",
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "updateTickerCloseTrade",
+      "discriminator": [
+        7
+      ],
+      "accounts": [
+        {
+          "name": "broadcaster",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "user"
+        },
+        {
+          "name": "agent",
+          "writable": true
+        },
+        {
+          "name": "ticker",
+          "writable": true
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -268,7 +382,7 @@
             "type": "u64"
           },
           {
-            "name": "amount",
+            "name": "netDepositedAmount",
             "type": "u64"
           },
           {
@@ -367,7 +481,7 @@
             "type": "u64"
           },
           {
-            "name": "isLockedInPosition",
+            "name": "isInPosition",
             "type": {
               "defined": "PodBool"
             }

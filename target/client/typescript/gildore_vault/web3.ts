@@ -36,6 +36,9 @@ export const REGISTER_AGENT_INSTRUCTION_DISCRIMINATOR = new Uint8Array([1]);
 export const DELETE_AGENT_INSTRUCTION_DISCRIMINATOR = new Uint8Array([2]);
 export const DEPOSIT_FOR_AGENT_USE_INSTRUCTION_DISCRIMINATOR = new Uint8Array([3]);
 export const REGISTER_TICKER_FOR_ME_INSTRUCTION_DISCRIMINATOR = new Uint8Array([4]);
+export const CONSUME_TICKER_INSTRUCTION_DISCRIMINATOR = new Uint8Array([5]);
+export const USER_WITHDRAWAL_INSTRUCTION_DISCRIMINATOR = new Uint8Array([6]);
+export const UPDATE_TICKER_CLOSE_TRADE_INSTRUCTION_DISCRIMINATOR = new Uint8Array([7]);
 
 /* Interfaces */
 export interface UserState {
@@ -45,7 +48,7 @@ export interface UserState {
   isInitialized: PodBool;
   modifiedTime: bigint;
   createdTime: bigint;
-  amount: bigint;
+  netDepositedAmount: bigint;
   bump: number;
 }
 
@@ -72,7 +75,7 @@ export interface IAgent {
 
 export interface Ticker {
   amountToSpend: bigint;
-  isLockedInPosition: PodBool;
+  isInPosition: PodBool;
 }
 
 export interface InitializeInstructionArgs {
@@ -93,6 +96,10 @@ export interface DepositForAgentUseInstructionArgs {
 
 export interface RegisterTickerForMeInstructionArgs {
   amountToSpend: bigint;
+}
+
+export interface UserWithdrawalInstructionArgs {
+  amount: bigint;
 }
 
 export interface InitializeInstructionInput {
@@ -140,12 +147,43 @@ export interface RegisterTickerForMeInstructionInput {
   user: Address;
   agent: Address;
   userState: Address;
+  ticker: Address;
+  mint: Address;
+  amountToSpend: bigint;
+}
+
+export interface ConsumeTickerInstructionInput {
+  broadcaster: Address;
+  admin: Address;
+  user: Address;
+  agent: Address;
+  globalStateAccount: Address;
+  userState: Address;
   userStateVault: Address;
+  destination: Address;
   ticker: Address;
   mint: Address;
   tokenProgram: Address;
   systemProgram: Address;
-  amountToSpend: bigint;
+}
+
+export interface UserWithdrawalInstructionInput {
+  user: Address;
+  agent: Address;
+  userState: Address;
+  userStateVault: Address;
+  mint: Address;
+  globalStateAccount: Address;
+  userTokenAccount: Address;
+  tokenProgram: Address;
+  amount: bigint;
+}
+
+export interface UpdateTickerCloseTradeInstructionInput {
+  broadcaster: Address;
+  user: Address;
+  agent: Address;
+  ticker: Address;
 }
 
 /* Codecs */
@@ -156,7 +194,7 @@ export const UserStateCodec = getStructCodec([
   ["isInitialized", PodBoolCodec],
   ["modifiedTime", getU64Codec()],
   ["createdTime", getU64Codec()],
-  ["amount", getU64Codec()],
+  ["netDepositedAmount", getU64Codec()],
   ["bump", getU8Codec()],
 ]);
 
@@ -183,7 +221,7 @@ export const IAgentCodec = getStructCodec([
 
 export const TickerCodec = getStructCodec([
   ["amountToSpend", getU64Codec()],
-  ["isLockedInPosition", PodBoolCodec],
+  ["isInPosition", PodBoolCodec],
 ]);
 
 /* Enums */
@@ -193,6 +231,9 @@ export enum ProgramInstruction {
   DeleteAgent = "DeleteAgent",
   DepositForAgentUse = "DepositForAgentUse",
   RegisterTickerForMe = "RegisterTickerForMe",
+  ConsumeTicker = "ConsumeTicker",
+  UserWithdrawal = "UserWithdrawal",
+  UpdateTickerCloseTrade = "UpdateTickerCloseTrade",
 }
 
 export type DecodedInstruction =
@@ -200,7 +241,10 @@ export type DecodedInstruction =
   | { type: ProgramInstruction.RegisterAgent; args: RegisterAgentInstructionArgs }
   | { type: ProgramInstruction.DeleteAgent; args: DeleteAgentInstructionArgs }
   | { type: ProgramInstruction.DepositForAgentUse; args: DepositForAgentUseInstructionArgs }
-  | { type: ProgramInstruction.RegisterTickerForMe; args: RegisterTickerForMeInstructionArgs };
+  | { type: ProgramInstruction.RegisterTickerForMe; args: RegisterTickerForMeInstructionArgs }
+  | { type: ProgramInstruction.ConsumeTicker }
+  | { type: ProgramInstruction.UserWithdrawal; args: UserWithdrawalInstructionArgs }
+  | { type: ProgramInstruction.UpdateTickerCloseTrade };
 
 /* Client */
 export class GildoreVaultClient {
@@ -262,6 +306,16 @@ export class GildoreVaultClient {
       ]);
       return { type: ProgramInstruction.RegisterTickerForMe, args: argsCodec.decode(data.slice(REGISTER_TICKER_FOR_ME_INSTRUCTION_DISCRIMINATOR.length)) };
     }
+    if (matchDisc(data, CONSUME_TICKER_INSTRUCTION_DISCRIMINATOR))
+      return { type: ProgramInstruction.ConsumeTicker };
+    if (matchDisc(data, USER_WITHDRAWAL_INSTRUCTION_DISCRIMINATOR)) {
+      const argsCodec = getStructCodec([
+        ["amount", getU64Codec()],
+      ]);
+      return { type: ProgramInstruction.UserWithdrawal, args: argsCodec.decode(data.slice(USER_WITHDRAWAL_INSTRUCTION_DISCRIMINATOR.length)) };
+    }
+    if (matchDisc(data, UPDATE_TICKER_CLOSE_TRADE_INSTRUCTION_DISCRIMINATOR))
+      return { type: ProgramInstruction.UpdateTickerCloseTrade };
     return null;
   }
 
@@ -353,11 +407,65 @@ export class GildoreVaultClient {
         { pubkey: input.user, isSigner: true, isWritable: true },
         { pubkey: input.agent, isSigner: false, isWritable: true },
         { pubkey: input.userState, isSigner: false, isWritable: false },
-        { pubkey: input.userStateVault, isSigner: false, isWritable: false },
         { pubkey: input.ticker, isSigner: false, isWritable: false },
+        { pubkey: input.mint, isSigner: false, isWritable: false },
+      ],
+      data,
+    });
+  }
+
+  createConsumeTickerInstruction(input: ConsumeTickerInstructionInput): TransactionInstruction {
+    const data = Buffer.from([5]);
+    return new TransactionInstruction({
+      programId: GildoreVaultClient.programId,
+      keys: [
+        { pubkey: input.broadcaster, isSigner: true, isWritable: true },
+        { pubkey: input.admin, isSigner: true, isWritable: true },
+        { pubkey: input.user, isSigner: false, isWritable: false },
+        { pubkey: input.agent, isSigner: false, isWritable: true },
+        { pubkey: input.globalStateAccount, isSigner: false, isWritable: true },
+        { pubkey: input.userState, isSigner: false, isWritable: true },
+        { pubkey: input.userStateVault, isSigner: false, isWritable: true },
+        { pubkey: input.destination, isSigner: false, isWritable: true },
+        { pubkey: input.ticker, isSigner: false, isWritable: true },
         { pubkey: input.mint, isSigner: false, isWritable: false },
         { pubkey: input.tokenProgram, isSigner: false, isWritable: false },
         { pubkey: input.systemProgram, isSigner: false, isWritable: false },
+      ],
+      data,
+    });
+  }
+
+  createUserWithdrawalInstruction(input: UserWithdrawalInstructionInput): TransactionInstruction {
+    const argsCodec = getStructCodec([
+      ["amount", getU64Codec()],
+    ]);
+    const data = Buffer.from([6, ...argsCodec.encode({ amount: input.amount })]);
+    return new TransactionInstruction({
+      programId: GildoreVaultClient.programId,
+      keys: [
+        { pubkey: input.user, isSigner: true, isWritable: true },
+        { pubkey: input.agent, isSigner: false, isWritable: false },
+        { pubkey: input.userState, isSigner: false, isWritable: true },
+        { pubkey: input.userStateVault, isSigner: false, isWritable: false },
+        { pubkey: input.mint, isSigner: false, isWritable: false },
+        { pubkey: input.globalStateAccount, isSigner: false, isWritable: true },
+        { pubkey: input.userTokenAccount, isSigner: false, isWritable: true },
+        { pubkey: input.tokenProgram, isSigner: false, isWritable: false },
+      ],
+      data,
+    });
+  }
+
+  createUpdateTickerCloseTradeInstruction(input: UpdateTickerCloseTradeInstructionInput): TransactionInstruction {
+    const data = Buffer.from([7]);
+    return new TransactionInstruction({
+      programId: GildoreVaultClient.programId,
+      keys: [
+        { pubkey: input.broadcaster, isSigner: true, isWritable: true },
+        { pubkey: input.user, isSigner: false, isWritable: false },
+        { pubkey: input.agent, isSigner: false, isWritable: true },
+        { pubkey: input.ticker, isSigner: false, isWritable: true },
       ],
       data,
     });
