@@ -8,7 +8,7 @@ mod instructions;
 mod state;
 use instructions::*;
 
-declare_id!("2um3F4vyQwcuhwrGdPHGMwwK5C4K5rFU84cxHPoYNMKg");
+declare_id!("2Xefp1aBUabU12QNDPxpj3ieU7MjZzcS6uD7x4e9qye9");
 
 #[program]
 mod gildore_vault {
