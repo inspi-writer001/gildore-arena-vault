@@ -68,6 +68,8 @@ impl UserDepositForAgentUse {
         bumps: UserDepositForAgentUseBumps,
     ) -> Result<(), ProgramError> {
         let platform_fee = self.global_state_account.fee_bps;
+        // log("hello");
+        // self.user_state.user_address.log();
         let amount_to_platform: u64 = {
             // fee_to_deduct =  amount * platform_fee / 10_000
 

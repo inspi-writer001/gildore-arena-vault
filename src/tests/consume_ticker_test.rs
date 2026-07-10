@@ -154,7 +154,10 @@ fn consume_ticker_rejects_non_admin_test() {
         .expect("vault token account")
         .data;
     let pre_destination = destination.data.clone();
-    let pre_ticker = svm.get_account(&deposit_ctx.ticker).expect("ticker account").data;
+    let pre_ticker = svm
+        .get_account(&deposit_ctx.ticker)
+        .expect("ticker account")
+        .data;
 
     let result = process_consume_ticker(
         &mut svm,
@@ -176,7 +179,10 @@ fn consume_ticker_rejects_non_admin_test() {
         .account(&destination.address)
         .map(|account| account.data.clone())
         .unwrap_or(pre_destination.clone());
-    let post_ticker = svm.get_account(&deposit_ctx.ticker).expect("ticker account").data;
+    let post_ticker = svm
+        .get_account(&deposit_ctx.ticker)
+        .expect("ticker account")
+        .data;
 
     assert_eq!(pre_vault, post_vault);
     assert_eq!(pre_destination, post_destination);
@@ -184,7 +190,7 @@ fn consume_ticker_rejects_non_admin_test() {
 }
 
 #[test]
-#[ignore = "exposes current consume_ticker CPI signer-escalation bug"]
+// #[ignore = "exposes current consume_ticker CPI signer-escalation bug"]
 fn consume_ticker_moves_funds_and_sets_position_test() {
     let (mut svm, reusable_state) = setup();
 
@@ -251,7 +257,10 @@ fn consume_ticker_moves_funds_and_sets_position_test() {
         .expect("destination account")
         .data
         .clone();
-    let post_ticker = svm.get_account(&deposit_ctx.ticker).expect("ticker account").data;
+    let post_ticker = svm
+        .get_account(&deposit_ctx.ticker)
+        .expect("ticker account")
+        .data;
     let post_user_state = svm
         .get_account(&deposit_ctx.user_state)
         .expect("user state account")

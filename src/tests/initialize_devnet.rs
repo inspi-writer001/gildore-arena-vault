@@ -6,6 +6,8 @@ use crate::{
     state::{DEPLOYER_ADDRESS, GLOBAL_STATE_SEED},
 };
 use quasar_lang::Vec;
+use quasar_spl::TOKEN_2022_ID;
+use quasar_svm::{SPL_ASSOCIATED_TOKEN_PROGRAM_ID, SPL_TOKEN_PROGRAM_ID};
 use solana_address::Address;
 use solana_commitment_config::CommitmentConfig;
 use solana_keypair::{read_keypair_file, Keypair, Signer};
@@ -40,23 +42,54 @@ pub fn process_initialize_devnet() -> Result<(), Box<dyn Error>> {
 
     let client = RpcClient::new_with_commitment(rpc_url, CommitmentConfig::confirmed());
 
-    let fee_token_pubkey = Pubkey::from(fee_token_account);
+    // let usdc_mint = Address::from_str_const("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+    let usdc_mint = Address::from_str_const("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
+
+    let (_expected_pda, bump_seed) = Address::find_program_address(
+        &[
+            &DEPLOYER_ADDRESS.as_ref(),
+            &SPL_TOKEN_PROGRAM_ID.as_ref(),
+            &usdc_mint.as_ref(),
+        ],
+        &SPL_ASSOCIATED_TOKEN_PROGRAM_ID,
+    );
+
+    println!("expected pda: {}", _expected_pda);
+    let deployer_token_account = Address::create_program_address(
+        &[
+            &DEPLOYER_ADDRESS.as_ref(),
+            &SPL_TOKEN_PROGRAM_ID.as_ref(),
+            &usdc_mint.as_ref(),
+            &[bump_seed],
+        ],
+        &SPL_ASSOCIATED_TOKEN_PROGRAM_ID,
+    )?;
+
+    println!("deployer ata: {}", _expected_pda);
+
+    let fee_token_pubkey = Pubkey::from(
+        // fee_token_account
+        deployer_token_account,
+    );
     client.get_account(&fee_token_pubkey)?;
 
     let (global_state, _) =
         Address::derive_program_address(&[GLOBAL_STATE_SEED.as_ref()], &crate::ID)
             .expect("global_state PDA should derive");
 
-    if client.get_account(&Pubkey::from(global_state)).is_ok() {
-        return Err(format!(
-            "global state account {} already exists on Devnet",
-            global_state
-        )
-        .into());
-    }
+    // if client.get_account(&Pubkey::from(global_state)).is_ok() {
+    //     return Err(format!(
+    //         "global state account {} already exists on Devnet",
+    //         global_state
+    //     )
+    //     .into());
+    // }   we don't need this failsafe since the instruction is idempotent
 
     let mut admins: Vec<Address, 4> = Vec::default();
     let _ = admins.push(DEPLOYER_ADDRESS);
+    let _2 = admins.push(Address::from_str_const(
+        "AdM1H3ny7Hp5kqeNuA4zcYoGToS3mqFtU9pmV7f8HFu8",
+    ));
 
     let initialize_instruction =
         Into::<solana_instruction::Instruction>::into(InitializeInstruction {
@@ -65,7 +98,7 @@ pub fn process_initialize_devnet() -> Result<(), Box<dyn Error>> {
                 max_fee: 20,
                 admin: admins,
             },
-            destination_token_account: fee_token_account,
+            destination_token_account: deployer_token_account, // fee_token_account,
             global_state_account: global_state,
             payer: payer.pubkey(),
             system_program: quasar_svm::system_program::ID,

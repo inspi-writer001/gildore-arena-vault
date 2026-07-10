@@ -72,6 +72,8 @@ impl ConsumeTickerForUser {
             return Err(ProgramError::MissingRequiredSignature);
         }
 
+        let vault_amount = self.user_state_vault.amount();
+
         let mut spendable_amount = self.ticker.amount_to_spend();
         let normal_minimum_spendable = MINIMUM_SPENDABLE * 10u64.pow(self.mint.decimals() as u32);
         let normal_hard_cap_spendable = HARD_CAP_SPENDABLE * 10u64.pow(self.mint.decimals() as u32);
@@ -82,29 +84,33 @@ impl ConsumeTickerForUser {
         );
 
         if spendable_amount == 0 {
-            if self.user_state_vault.amount() >= normal_hard_cap_spendable {
+            if vault_amount >= normal_hard_cap_spendable {
                 spendable_amount = normal_hard_cap_spendable;
             } else {
-                spendable_amount = self.user_state_vault.amount();
+                spendable_amount = vault_amount;
             }
+        } else if spendable_amount > vault_amount {
+            spendable_amount = vault_amount;
         }
 
-        let (expected_user_state, bump) = Address::derive_program_address(
-            &[
-                b"user_state",
-                self.user.address().as_ref(),
-                self.mint.address().as_ref(),
-                self.agent.address().as_ref(),
-            ],
-            &crate::ID,
-        )
-        .ok_or(ProgramError::InvalidSeeds)?;
+        // let (expected_user_state, bump) = Address::derive_program_address(
+        //     &[
+        //         b"user_state",
+        //         self.user.address().as_ref(),
+        //         self.mint.address().as_ref(),
+        //         self.agent.address().as_ref(),
+        //     ],
+        //     &crate::ID,
+        // )
+        // .ok_or(ProgramError::InvalidSeeds)?;
 
-        if expected_user_state != *self.user_state.address() {
-            return Err(ProgramError::InvalidSeeds);
-        }
+        // if expected_user_state != *self.user_state.address() {
+        //     return Err(ProgramError::InvalidSeeds);
+        // }
 
-        let bump = [bump];
+        let pda_bump = self.user_state.bump;
+
+        let bump = [pda_bump];
 
         let signer_seeds = [
             Seed::from(b"user_state" as &[u8]),
@@ -121,7 +127,7 @@ impl ConsumeTickerForUser {
                 &self.destination,
                 &self.user_state,
                 spendable_amount,
-                self.mint.decimals(),
+                self.mint.decimals,
             )
             .invoke_signed(&signer_seeds)?;
 
