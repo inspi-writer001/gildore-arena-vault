@@ -62,6 +62,7 @@ pub struct UserDepositForAgentUse {
 }
 
 impl UserDepositForAgentUse {
+    #[inline(always)]
     pub fn deposit_for_agent_use(
         &mut self,
         amount: u64,
@@ -141,6 +142,7 @@ impl UserDepositForAgentUse {
     }
 }
 
+#[inline(always)]
 pub fn compute_platform_fee(amount: u64, fee_bps: u16, max_fee: u64) -> Result<u64, ProgramError> {
     let raw_fee_u128 = (amount as u128)
         .checked_mul(fee_bps as u128)

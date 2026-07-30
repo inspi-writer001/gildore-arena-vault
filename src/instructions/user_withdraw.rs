@@ -39,6 +39,7 @@ pub struct UserWithdrawFromParticularAgentVault {
 }
 
 impl UserWithdrawFromParticularAgentVault {
+    #[inline(always)]
     pub fn withdraw(&mut self, amount: u64) -> Result<(), ProgramError> {
         let user_vault_amount = self.user_state_vault.amount();
         assert!(user_vault_amount >= amount, "cannot withdraw below balance");

@@ -41,7 +41,7 @@ fn derive_agent_id(name: &str) -> Address {
 }
 
 #[test]
-#[ignore = "hits Devnet RPC and requires funded env-configured deployer keypair plus initialized global state"]
+// #[ignore = "hits Devnet RPC and requires funded env-configured deployer keypair plus initialized global state"]
 fn test_register_agent_devnet() {
     dotenvy::dotenv().expect("Failed to load .env file");
     process_register_agent_devnet().expect("devnet register_agent should succeed");

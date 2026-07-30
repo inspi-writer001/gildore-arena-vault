@@ -25,6 +25,7 @@ pub struct Agent {
 }
 
 impl Agent {
+    #[inline(always)]
     pub fn register_agent(&mut self, name: &str) -> Result<(), ProgramError> {
         // ensure caller is an admin
         if !self
@@ -173,6 +174,7 @@ impl Agent {
         Ok(())
     }
 
+    #[inline(always)]
     pub fn delete_agent(&mut self, id: Address) -> Result<(), ProgramError> {
         // assert caller is an admin
         if !self

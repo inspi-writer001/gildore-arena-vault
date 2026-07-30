@@ -2,7 +2,7 @@ use std::vec;
 use solana_address::Address;
 use solana_instruction::{AccountMeta, Instruction};
 
-pub const ID: Address = solana_address::address!("2Xefp1aBUabU12QNDPxpj3ieU7MjZzcS6uD7x4e9qye9");
+pub const ID: Address = solana_address::address!("Arenathy19uDyZnp2jrQaeSuZpdqbN8NmTQrK6j5gXS1");
 
 pub struct InitializeInstruction {
     pub payer: Address,

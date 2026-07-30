@@ -62,6 +62,7 @@ pub struct ConsumeTickerForUser {
 }
 
 impl ConsumeTickerForUser {
+    #[inline(always)]
     pub fn consume_ticker_for_user(&mut self) -> Result<(), ProgramError> {
         if !self
             .global_state_account
@@ -158,6 +159,7 @@ pub struct CloseTrade {
 }
 
 impl CloseTrade {
+    #[inline(always)]
     pub fn update_ticker_close_trade(&mut self) -> Result<(), ProgramError> {
         self.ticker.is_in_position = false.into();
         Ok(())

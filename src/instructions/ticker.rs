@@ -33,6 +33,7 @@ pub struct ATicker {
 }
 
 impl ATicker {
+    #[inline(always)]
     pub fn register_ticker_for_me(&mut self, amount_to_spend: u64) -> Result<(), ProgramError> {
         self.ticker.amount_to_spend = amount_to_spend.into();
         Ok(())

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Gildore Vault Audit Review</title>
+  <style>
+    body { font-family: sans-serif; margin: 32px; line-height: 1.5; color: #111; }
+    h1, h2 { margin-bottom: 0.3rem; }
+    .sev-high { color: #9b1c1c; }
+    .sev-medium { color: #9a6700; }
+    .sev-low { color: #0b5394; }
+    code { background: #f3f3f3; padding: 0.1rem 0.25rem; }
+  </style>
+</head>
+<body>
+  <h1>Gildore Vault Audit Review</h1>
+  <p>Date: 2026-07-23</p>
+  <p>Security score: C</p>
+  <p>Quality score: B</p>
+  <p>Ready for mainnet: false</p>
+
+  <h2 class="sev-high">High: agent deletion can strand user funds</h2>
+  <p><code>delete_agent</code> can close the live <code>IAgent</code> account even though later withdrawal and state access still require that account to exist.</p>
+
+  <h2 class="sev-high">High: initialize can rewrite protocol authority and fees</h2>
+  <p><code>initialize</code> is idempotent and writable by the hard-coded deployer, so it can rewrite admins, fee basis points, max fee, and fee destination after launch.</p>
+
+  <h2 class="sev-medium">Medium: close-trade flag is permissionless</h2>
+  <p>Any caller who knows the accounts can clear <code>ticker.is_in_position</code>, which weakens any monitoring or control flow built on that flag.</p>
+
+  <h2 class="sev-medium">Medium: consume_ticker uses panic-style guards and unchecked exponentiation</h2>
+  <p>The amount scaling logic uses <code>10u64.pow(...)</code> and <code>assert!</code>, which can abort rather than fail cleanly under malformed mint configuration or boundary cases.</p>
+
+  <h2 class="sev-low">Low: signer bump is trusted from stored state on consume path</h2>
+  <p><code>consume_ticker</code> signs with <code>user_state.bump</code> without re-deriving the canonical bump immediately before CPI.</p>
+</body>
+</html>

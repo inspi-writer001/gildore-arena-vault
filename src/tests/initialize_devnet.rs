@@ -42,8 +42,9 @@ pub fn process_initialize_devnet() -> Result<(), Box<dyn Error>> {
 
     let client = RpcClient::new_with_commitment(rpc_url, CommitmentConfig::confirmed());
 
-    // let usdc_mint = Address::from_str_const("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
-    let usdc_mint = Address::from_str_const("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
+    // let usdc_mint = Address::from_str_const("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"); // old
+    // let usdc_mint = Address::from_str_const("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"); // devnet
+    let usdc_mint = Address::from_str_const("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"); // mainnet
 
     let (_expected_pda, bump_seed) = Address::find_program_address(
         &[
