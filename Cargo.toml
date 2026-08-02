@@ -14,6 +14,7 @@ crate-type = ["cdylib"]
 alloc = []
 client = []
 debug = []
+idl-build = ["quasar-lang/idl-build"]
 
 [dependencies]
 quasar-lang = { git = "https://github.com/blueshift-gg/quasar", branch = "master" }
